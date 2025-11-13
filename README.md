@@ -64,6 +64,8 @@ Demonstrates verification of 2D data structures with nested sequences, including
 
 ## How to Verify
 
+**👉 For detailed setup instructions, see [GETTING_STARTED.md](GETTING_STARTED.md)**
+
 ### Prerequisites
 
 1. **Java**: OpenJDK 11 or higher
