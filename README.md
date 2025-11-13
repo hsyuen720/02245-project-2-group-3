@@ -15,7 +15,9 @@ viper-examples/
 ├── 05_gcd.vpr              - Greatest Common Divisor (Euclidean algorithm)
 ├── 06_swap.vpr             - Variable and array element swapping
 ├── 07_absolute_value.vpr   - Absolute value and distance computation
-└── 08_array_sum.vpr        - Sum of array elements with recursive specification
+├── 08_array_sum.vpr        - Sum of array elements with recursive specification
+├── 09_predicates.vpr       - Predicates and abstract specifications
+└── 10_matrix.vpr           - Matrix operations with 2D reasoning
 ```
 
 ## About Viper
@@ -53,6 +55,12 @@ Shows conditional reasoning with if-then-else statements and ensures proper hand
 
 ### 8. Array Sum (08_array_sum.vpr)
 Demonstrates recursive function definitions and reasoning about array aggregation operations.
+
+### 9. Predicates (09_predicates.vpr)
+Illustrates predicate definitions and folding/unfolding for abstract specifications and compositional verification.
+
+### 10. Matrix Operations (10_matrix.vpr)
+Demonstrates verification of 2D data structures with nested sequences, including matrix transpose and operations with nested loop invariants.
 
 ## How to Verify
 

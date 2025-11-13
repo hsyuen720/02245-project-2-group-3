@@ -84,6 +84,28 @@ Sums all elements in an array using a recursive function specification and itera
 - Loop invariant: partial sum matches recursive definition
 - Accumulator pattern verification
 
+### 09_predicates.vpr - Predicates and Abstract Specifications
+**Concepts:** Predicate definitions, folding/unfolding, abstract specifications
+
+Demonstrates how to use predicates to encapsulate and abstract specifications, including range validation and sorted segment checking.
+
+**Key specifications:**
+- Predicate definitions for reusable specifications
+- Fold/unfold operations for predicates
+- Abstract bounds checking and validation
+- Compositional verification with predicates
+
+### 10_matrix.vpr - Matrix Operations
+**Concepts:** Nested sequences, 2D reasoning, nested loops, complex data structures
+
+Implements matrix operations including transpose, element access, and summation with verification of 2D array properties.
+
+**Key specifications:**
+- Valid matrix predicate (all rows same length)
+- Nested loop invariants for 2D traversal
+- Transpose correctness: result[j][i] == matrix[i][j]
+- Complex quantified properties over 2D structures
+
 ## Verification Concepts Used
 
 ### Specifications
@@ -146,7 +168,8 @@ Recommended order for studying these examples:
 
 1. **Beginner**: Start with 01_sum.vpr, 06_swap.vpr, 07_absolute_value.vpr
 2. **Intermediate**: Move to 02_array_max.vpr, 03_factorial.vpr, 08_array_sum.vpr
-3. **Advanced**: Study 04_binary_search.vpr, 05_gcd.vpr
+3. **Advanced**: Study 04_binary_search.vpr, 05_gcd.vpr, 09_predicates.vpr
+4. **Expert**: Explore 10_matrix.vpr for complex 2D reasoning
 
 ## Common Patterns
 
