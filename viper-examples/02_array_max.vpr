@@ -1,0 +1,31 @@
+// Example 2: Finding the maximum element in an array
+// This demonstrates array reasoning and quantified permissions
+
+method find_max(a: Seq[Int], n: Int) returns (max: Int)
+  requires n > 0
+  requires |a| == n
+  ensures forall i: Int :: 0 <= i && i < n ==> max >= a[i]
+  ensures exists i: Int :: 0 <= i && i < n && max == a[i]
+{
+  max := a[0]
+  var idx: Int := 1
+  
+  while (idx < n)
+    invariant 1 <= idx && idx <= n
+    invariant forall j: Int :: 0 <= j && j < idx ==> max >= a[j]
+    invariant exists j: Int :: 0 <= j && j < idx && max == a[j]
+  {
+    if (a[idx] > max) {
+      max := a[idx]
+    }
+    idx := idx + 1
+  }
+}
+
+// Test method
+method test_find_max()
+{
+  var arr: Seq[Int] := Seq(3, 7, 2, 9, 1, 5)
+  var max_val: Int := find_max(arr, 6)
+  assert max_val == 9
+}

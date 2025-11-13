@@ -1,0 +1,43 @@
+// Example 7: Absolute value computation
+// This demonstrates conditional reasoning and specifications
+
+method absolute_value(x: Int) returns (result: Int)
+  ensures result >= 0
+  ensures x >= 0 ==> result == x
+  ensures x < 0 ==> result == -x
+  ensures result == x || result == -x
+{
+  if (x >= 0) {
+    result := x
+  } else {
+    result := -x
+  }
+}
+
+// Method to compute distance between two integers
+method distance(a: Int, b: Int) returns (dist: Int)
+  ensures dist >= 0
+  ensures dist == absolute_value(a - b)
+{
+  var diff: Int := a - b
+  dist := absolute_value(diff)
+}
+
+// Test method
+method test_absolute_value()
+{
+  var abs1: Int := absolute_value(5)
+  assert abs1 == 5
+  
+  var abs2: Int := absolute_value(-5)
+  assert abs2 == 5
+  
+  var abs3: Int := absolute_value(0)
+  assert abs3 == 0
+  
+  var d: Int := distance(10, 3)
+  assert d == 7
+  
+  var d2: Int := distance(3, 10)
+  assert d2 == 7
+}

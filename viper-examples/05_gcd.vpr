@@ -1,0 +1,40 @@
+// Example 5: Greatest Common Divisor using Euclidean algorithm
+// This demonstrates reasoning about mathematical properties and algorithms
+
+function divides(a: Int, b: Int): Bool
+  requires a > 0
+{
+  exists k: Int :: b == k * a
+}
+
+method gcd(a: Int, b: Int) returns (result: Int)
+  requires a > 0 && b > 0
+  ensures result > 0
+  ensures divides(result, a) && divides(result, b)
+{
+  var x: Int := a
+  var y: Int := b
+  
+  while (y != 0)
+    invariant x > 0 && y >= 0
+  {
+    var temp: Int := y
+    y := x % y
+    x := temp
+  }
+  
+  result := x
+}
+
+// Test method
+method test_gcd()
+{
+  var g1: Int := gcd(48, 18)
+  assert g1 == 6
+  
+  var g2: Int := gcd(100, 50)
+  assert g2 == 50
+  
+  var g3: Int := gcd(17, 19)
+  assert g3 == 1
+}

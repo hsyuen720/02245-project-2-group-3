@@ -1,0 +1,47 @@
+// Example 4: Binary search in a sorted array
+// This demonstrates reasoning about sorted sequences and search algorithms
+
+method binary_search(a: Seq[Int], key: Int) returns (index: Int)
+  requires |a| > 0
+  requires forall i: Int, j: Int :: 0 <= i && i < j && j < |a| ==> a[i] <= a[j]
+  ensures index >= -1 && index < |a|
+  ensures index >= 0 ==> a[index] == key
+  ensures index == -1 ==> forall i: Int :: 0 <= i && i < |a| ==> a[i] != key
+{
+  var low: Int := 0
+  var high: Int := |a| - 1
+  index := -1
+  
+  while (low <= high && index == -1)
+    invariant 0 <= low && high < |a|
+    invariant index == -1 ==> forall i: Int :: (0 <= i && i < low) || (high < i && i < |a|) ==> a[i] != key
+    invariant index >= 0 ==> 0 <= index && index < |a| && a[index] == key
+  {
+    var mid: Int := (low + high) / 2
+    
+    if (a[mid] == key) {
+      index := mid
+    } else {
+      if (a[mid] < key) {
+        low := mid + 1
+      } else {
+        high := mid - 1
+      }
+    }
+  }
+}
+
+// Test method
+method test_binary_search()
+{
+  var sorted_array: Seq[Int] := Seq(1, 3, 5, 7, 9, 11, 13)
+  
+  var idx1: Int := binary_search(sorted_array, 7)
+  assert idx1 == 3
+  
+  var idx2: Int := binary_search(sorted_array, 1)
+  assert idx2 == 0
+  
+  var idx3: Int := binary_search(sorted_array, 4)
+  assert idx3 == -1
+}

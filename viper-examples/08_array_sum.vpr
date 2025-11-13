@@ -1,0 +1,41 @@
+// Example 8: Sum all elements in an array
+// This demonstrates reasoning about array sequences and aggregation
+
+function sum_seq(s: Seq[Int], from: Int, to: Int): Int
+  requires 0 <= from && from <= to && to <= |s|
+  decreases to - from
+{
+  from == to ? 0 : s[from] + sum_seq(s, from + 1, to)
+}
+
+method array_sum(a: Seq[Int]) returns (sum: Int)
+  requires |a| > 0
+  ensures sum == sum_seq(a, 0, |a|)
+{
+  sum := 0
+  var i: Int := 0
+  
+  while (i < |a|)
+    invariant 0 <= i && i <= |a|
+    invariant sum == sum_seq(a, 0, i)
+  {
+    sum := sum + a[i]
+    i := i + 1
+  }
+}
+
+// Test method
+method test_array_sum()
+{
+  var arr1: Seq[Int] := Seq(1, 2, 3, 4, 5)
+  var sum1: Int := array_sum(arr1)
+  assert sum1 == 15
+  
+  var arr2: Seq[Int] := Seq(10, 20, 30)
+  var sum2: Int := array_sum(arr2)
+  assert sum2 == 60
+  
+  var arr3: Seq[Int] := Seq(5)
+  var sum3: Int := array_sum(arr3)
+  assert sum3 == 5
+}

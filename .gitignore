@@ -1,0 +1,28 @@
+# Viper verification artifacts
+*.bpl
+*.smt2
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+/tmp/
+*.tmp
+*.temp
+
+# Build artifacts
+/build/
+/dist/
+/target/
+
+# Java class files (if any)
+*.class
