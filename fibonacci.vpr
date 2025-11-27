@@ -6,6 +6,29 @@
  * Finally, prove that your bound is indeed the smallest upper bound on the method's runtime.
  */
 
+ field ticks: Int
+
+ // function that computes the number of ticks needed to compute fib(n)
+
+function fibTicks(n: Int): Int
+  requires n >= 0
+  ensures result >= 1
+  decreases n
+{
+   (n == 0) ? 1 :
+    (n == 1) ? 1 :
+   1 + fibTicks(n - 1) + fibTicks(n - 2)
+}
+
+// standard Fibonacci function for functional correctness
+
+function fib(n: Int): Int
+  requires n >= 0
+  decreases n
+{
+   n <= 1 ? n : fib(n - 1) + fib(n - 2)
+}
+
 
 // -----------------------------------------
 // Runtime model
@@ -20,6 +43,14 @@ method consume_time_credit() //
     requires acc(time_credit(), 1/1)
 // -----------------------------------------
 
+// models a clock that counts the number of ticks
+method tick(clock: Ref)
+  requires acc(clock.ticks, 1/1)
+  ensures  acc(clock.ticks, 1/1)
+  ensures  clock.ticks == old(clock.ticks) + 1
+{
+  clock.ticks := clock.ticks + 1;
+}
 
 // -----------------------------------------
 // Task 1: Prove a runtime bound for the following recursive method
@@ -29,24 +60,58 @@ method consume_time_credit() //
 // Do not modify the given production code. However, feel free to 
 // introduce additional functions, lemma methods or ghost code.
 // Furthermore, make sure that the functional contract remains intact.
-method fib_recursive(n: Int) returns (res: Int)
-    requires n >= 0
-    // TODO add time credits and functional specification
+method fib_recursive(n: Int, ghost_clock: Ref) returns (res: Int)
+  requires n >= 0
+  requires acc(time_credit(), fibTicks(n)/1)
+  requires acc(ghost_clock.ticks, 1/1)
+  ensures res == fib(n)
+  ensures  acc(time_credit(), 0/1)
+  ensures  acc(ghost_clock.ticks, 1/1)
+  ensures  ghost_clock.ticks == old(ghost_clock.ticks) + fibTicks(n)
 {
-    consume_time_credit() // we must spend a credit for every call
 
-    if (n == 0) {
-        res := 0
-    } elseif (n == 1) {
-        res := 1
-    } else {
-        var sub1: Int
-        sub1 := fib_recursive(n - 1)
+   //ghost code to track actual number of ticks
+   tick(ghost_clock);
 
-        var sub2: Int
-        sub2 := fib_recursive(n - 2)
+   consume_time_credit();
 
-        res := sub1 + sub2
-    }
+
+  if (n == 0) {
+    res := 0;
+
+    { assert fibTicks(0) == 1 }
+    { assert acc(time_credit(), 0/1) }
+
+  } elseif (n == 1) {
+    res := 1;
+
+    { assert fibTicks(1) == 1 } 
+    { assert acc(time_credit(), 0/1) }
+
+  } else {
+
+    { assert n >= 2 }
+    { assert fibTicks(n - 1) + fibTicks(n - 2) == fibTicks(n) - 1 }
+    { assert acc(time_credit(), (fibTicks(n - 1) + fibTicks(n - 2))/1) }
+    
+    var sub1: Int;
+    sub1 := fib_recursive(n - 1, ghost_clock);
+
+    { assert acc(time_credit(), fibTicks(n - 2)/1) }
+
+    var sub2: Int;
+    sub2 := fib_recursive(n - 2, ghost_clock);
+
+    assert acc(time_credit(), 0/1);
+
+    res := sub1 + sub2;
+
+    { assert sub1 == fib(n - 1) }
+    { assert sub2 == fib(n - 2) }
+    { assert res == fib(n) }
+
+    // proof that actual ticks are equal to fibTicks(n)
+    { assert ghost_clock.ticks == old(ghost_clock.ticks) + fibTicks(n) }
+  }
 }
 // -----------------------------------------
