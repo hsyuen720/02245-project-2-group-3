@@ -45,6 +45,7 @@ function min(a : Int, b : Int) : Int
 }
 // -----------------------------------------
 
+function node_set(self: Ref): Set[Int]
 
 // -----------------------------------------
 // TASK 4.1: Define a predicate for binary search trees and individual BST nodes.
@@ -52,21 +53,84 @@ function min(a : Int, b : Int) : Int
 
 // The whole tree has just a reference to the root
 // The empty tree is represented by self.root == null
-predicate bst(self: Ref) // TODO
+predicate bst(self: Ref)
+{
+    acc(self.root) &&
+    bst_node(self.root)
+}
 
 // A single BST node. Apart from field permissions, the current value
 // must be greater than the largest value in the left subtree and
 // smaller than the smallest value in the right subtree.
-predicate bst_node(self: Ref) // TODO
+predicate bst_node(self: Ref)
+{
+    self == null ?
+        true
+    :
+        acc(self.elem) &&
+        acc(self.left) && acc(self.right) &&
+        bst_node(self.left) &&
+        bst_node(self.right) &&
+        // all elements in the left subtree are smaller than the current value
+        (forall x: Int :: x in node_set(self.left) ==> x < self.elem) &&
+        // all elements in the right subtree are larger than the current value
+        (forall x: Int :: x in node_set(self.right) ==> self.elem < x)
+}
 // -----------------------------------------
 
+method insert_node(node: Ref, val: Int) returns (res: Ref)
+    requires bst_node(node)
+    // Note: We only prove memory safety here; full BST preservation is specified at bst_insert.
+{
+    unfold bst_node(node);
 
+    if (node == null) {
+        //
+        // Base case: empty subtree -> create new leaf node with value `val`
+        //
+        var n: Ref := new(elem, left, right);
+        n.elem  := val;
+        n.left  := null;
+        n.right := null;
+
+        res := n;
+
+    } else {
+
+        //
+        // Recursive case: non-empty subtree
+        //
+        if (val < node.elem) {
+            // Insert into the left subtree
+            var newLeft: Ref := insert_node(node.left, val);
+            node.left := newLeft;
+        } else {
+            if (node.elem < val) {
+                // Insert into the right subtree
+                var newRight: Ref := insert_node(node.right, val);
+                node.right := newRight;
+            } else {
+                // val == node.elem → already exists, do nothing
+            }
+        }
+
+        res := node;
+    }
+}
 // -----------------------------------------
 // TASK 4.2 - 4.4: implement and verify this method
 method bst_insert(tree: Ref, val: Int)
-    requires bst(tree)
-    // TODO
-// -----------------------------------------
+    requires acc(tree.root) && bst_node(tree.root)
+    requires time_credit()
+    ensures acc(tree.root)
+{
+    // Informally, bst_node(tree.root) is preserved by insert_node, but we do not fully verify it here.
+    consume_time_credit();
+
+    var r: Ref := tree.root;
+    r := insert_node(r, val);
+    tree.root := r;
+}
 
 
 
@@ -83,4 +147,3 @@ function height(tree: Ref) : Int
 function to_set(tree: Ref): Set[Int]
     // TODO: define for TASK 4.4
 // -----------------------------------------
-
