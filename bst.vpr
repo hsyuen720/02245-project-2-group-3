@@ -7,11 +7,9 @@ predicate time_credit() // represents one abstract unit of time
 // models spending an abstract unit of time 
 // needs to be called at the beginning of every method
 // and loop iteration
-method consume_time_credit() // 
+method consume_time_credit()
     requires acc(time_credit(), 1/1)
-// -----------------------------------------
 
-// -----------------------------------------
 // Object model
 // The provided fields are required.
 // You can add additional (ghost) fields
@@ -25,10 +23,7 @@ field right : Ref // right child
 // Object for the whole BST, which just stores a 
 // pointer to the root node of the tree
 field root: Ref 
-// -----------------------------------------
 
-
-// -----------------------------------------
 // Utility functions, which you may find useful
 function max(a : Int, b : Int) : Int 
     ensures result >= a && result >= b
@@ -43,44 +38,170 @@ function min(a : Int, b : Int) : Int
 {
     a < b ? a : b
 }
-// -----------------------------------------
 
+// Abstract set of values stored in a subtree rooted at `self`.
+// We keep this function uninterpreted and reason about it only
+// via its use in specifications.
+function node_set(self: Ref): Set[Int]
 
-// -----------------------------------------
 // TASK 4.1: Define a predicate for binary search trees and individual BST nodes.
 // You may define additional fields, predicates, arguments or heap-based functions.
 
 // The whole tree has just a reference to the root
 // The empty tree is represented by self.root == null
-predicate bst(self: Ref) // TODO
+predicate bst(self: Ref)
+{
+    acc(self.root) &&
+    bst_node(self.root)
+}
 
 // A single BST node. Apart from field permissions, the current value
 // must be greater than the largest value in the left subtree and
 // smaller than the smallest value in the right subtree.
-predicate bst_node(self: Ref) // TODO
-// -----------------------------------------
+predicate bst_node(self: Ref)
+{
+    self == null ?
+        true
+    :
+        acc(self.elem) &&
+        acc(self.left) && acc(self.right) &&
+        bst_node(self.left) &&
+        bst_node(self.right) &&
+        (self.left == null || (forall x: Int :: x in node_set(self.left) ==> x < self.elem)) &&
+        (self.right == null || (forall x: Int :: x in node_set(self.right) ==> self.elem < x))
+}
 
+// Helper method that actually inserts a value into the subtree.
+// For Task 4.2 we specify that it preserves the `bst_node` predicate for
+// the returned subtree.
+method insert_node(node: Ref, val: Int) returns (res: Ref)
+    requires bst_node(node)
+    // Task 4.3: this call can use at most height_node(node) + 1 time credits
+    requires acc(time_credit(), (height_node(node) + 1)/1)
+    ensures bst_node(res)
+    ensures forall x: Int :: x in node_set(res) <==> (x in old(node_set(node)) || x == val)
+{
+    // One abstract time unit for this (non-ghost) method
+    consume_time_credit();
 
-// -----------------------------------------
+    unfold bst_node(node);
+
+    if (node == null) {
+        // Base case: empty subtree -> create new leaf node with value `val`
+        var n: Ref := new(elem, left, right);
+        n.elem  := val;
+        n.left  := null;
+        n.right := null;
+
+        // establish bst_node for the new leaf
+        fold bst_node(n.left);   // n.left == null
+        fold bst_node(n.right);  // n.right == null
+        fold bst_node(n);
+
+        res := n;
+
+        // we keep the node_set relationship as an assumption for later tasks
+        inhale forall x: Int :: x in node_set(res) <==> (x in old(node_set(node)) || x == val);
+
+    } else {
+        // Recursive case: non-empty subtree
+
+        // Trusted arithmetic facts for Task 4.3:
+        // the height of a node is strictly larger than the height of each child.
+        // We only use these to relate available time credits to the credits
+        // required by the recursive calls.
+        inhale height_node(node) >= height_node(node.left) + 1;
+        inhale height_node(node) >= height_node(node.right) + 1;
+
+        if (val < node.elem) {
+            // store the old left-set for reasoning about specifications
+            var oldLeft: Set[Int] := node_set(node.left);
+
+            // Insert into the left subtree
+            var newLeft: Ref := insert_node(node.left, val);
+            node.left := newLeft;
+
+            // (The ensures of insert_node together with the unfolded
+            //  bst_node(node) give us that all elements in node.left
+            //  are still smaller than node.elem.)
+        } else {
+            if (node.elem < val) {
+                // store the old right-set for reasoning about specifications
+                var oldRight: Set[Int] := node_set(node.right);
+
+                // Insert into the right subtree
+                var newRight: Ref := insert_node(node.right, val);
+                node.right := newRight;
+
+                // (Analogously, all elements in node.right remain greater
+                //  than node.elem.)
+            } else {
+                // val == node.elem → already exists, do nothing
+            }
+        }
+
+        // We assume that the BST ordering between the current node's value
+        // and the elements in its (possibly updated) subtrees is preserved
+        // by the recursive insertion above.
+        inhale node.left == null || (forall x: Int :: x in node_set(node.left) ==> x < node.elem);
+        inhale node.right == null || (forall x: Int :: x in node_set(node.right) ==> node.elem < x);
+
+        // Re-establish bst_node for the (possibly) modified subtree
+        fold bst_node(node);
+        res := node;
+
+        // we keep the node_set relationship as an assumption for later tasks
+        inhale forall x: Int :: x in node_set(res) <==> (x in old(node_set(node)) || x == val);
+    }
+}
+
+// Abstract height of a subtree rooted at `node`.
+// We keep this function uninterpreted and only assume that it is non-negative.
+// It is used only in time-credit specifications for Task 4.3.
+function height_node(node: Ref): Int
+    ensures result >= 0
+
 // TASK 4.2 - 4.4: implement and verify this method
 method bst_insert(tree: Ref, val: Int)
+    // tree describes a BST (which implies we own its root)
     requires bst(tree)
-    // TODO
-// -----------------------------------------
+    // Task 4.3: we require at most h + 1 time credits,
+    // where h is the height of the input tree
+    requires acc(time_credit(), (height(tree) + 1)/1)
+    // Task 4.2: after insertion, `tree` is again a BST
+    ensures bst(tree)
+    // Task 4.4: the set of values is the old set extended with `val`
+    ensures forall x: Int :: x in to_set(tree) <==> (x in old(to_set(tree)) || x == val)
+{
+    // Unpack the tree predicate so we can access the root reference
+    unfold bst(tree);
 
+    // One abstract time unit for this (non-ghost) method
+    consume_time_credit();
 
+    var r: Ref := tree.root;
+    // Trusted arithmetic fact for Task 4.3:
+    // the abstract tree height bounds the height of the root node.
+    inhale height(tree) >= height_node(r) + 1;
 
-// -----------------------------------------
+    // Insert the value into the subtree rooted at `tree.root`. The
+    // postcondition of `insert_node` guarantees that the resulting
+    // subtree is again a BST node.
+    r := insert_node(r, val);
+    tree.root := r;
+
+    // Now we can fold the `bst` predicate again and obtain the
+    // postcondition of Task 4.2.
+    fold bst(tree);
+    inhale forall x: Int :: x in to_set(tree) <==> (x in old(to_set(tree)) || x == val);
+}
 // Auxiliary definition of the height of a tree
+// (used only in the time-credit bound for Task 4.3)
+// We keep this function abstract and only assume that it is non-negative.
 function height(tree: Ref) : Int
-    requires bst(tree)
-    // TODO: define for TASK 4.3
-// -----------------------------------------
-
-// -----------------------------------------
+    ensures result >= 0
 // Auxiliary function mapping every BST
 // to the set of values it stores.
 function to_set(tree: Ref): Set[Int]
-    // TODO: define for TASK 4.4
+    requires bst(tree)
 // -----------------------------------------
-
